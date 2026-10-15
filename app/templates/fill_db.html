@@ -49,6 +49,7 @@ position,country,artist,song
             </div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label for="stage" class="form-label fw-bold">Select Stage</label>
                         <select name="stage" id="stage" class="form-select" required>
@@ -119,6 +120,7 @@ position,country,artist,song
                 </div>
                 
                 <form method="POST" action="{{ url_for('confirm_fill_db') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="stage" value="{{ selected_stage }}">
                     <input type="hidden" name="clear_existing" value="{{ clear_existing }}">
                     <input type="hidden" name="csv_data" value="{{ csv_data_json }}">

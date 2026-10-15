@@ -1,4 +1,6 @@
-from flask import Flask
+from flask import Flask, request, Response
+from flask_wtf.csrf import CSRFProtect
+import hmac
 import os
 import secrets
 from .models import db
@@ -20,7 +22,7 @@ if not db_url:
     print("⚠️ No DATABASE_URL found, using SQLite as fallback")
     db_url = "sqlite:////data/my-eurovision-table.db"
 else:
-    print(f"✅ Using database: {db_url.split('@')[1] if '@' in db_url else db_url}")
+    print("Using configured database")
 
 # Use environment variable for secret key with a secure random fallback for development
 secret_key = os.getenv("SECRET_KEY")
@@ -34,6 +36,27 @@ else:
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = secret_key
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'true').lower() == 'true'
+app.config['ADMIN_USERNAME'] = os.getenv('ADMIN_USERNAME', 'admin')
+app.config['ADMIN_PASSWORD'] = os.getenv('ADMIN_PASSWORD', '')
+CSRFProtect(app)
+
+@app.before_request
+def require_database_administrator():
+    if request.endpoint not in {'fill_db', 'confirm_fill_db', 'update_country_order'}:
+        return None
+    password = app.config.get('ADMIN_PASSWORD', '')
+    if len(password) < 24:
+        return Response('Administration is not configured', status=503)
+    supplied = request.authorization
+    if (not supplied or supplied.type != 'basic' or
+            not hmac.compare_digest((supplied.username or '').encode(), app.config['ADMIN_USERNAME'].encode()) or
+            not hmac.compare_digest((supplied.password or '').encode(), password.encode())):
+        return Response('Administrator authentication required', status=401,
+                        headers={'WWW-Authenticate': 'Basic realm="Administration", charset="UTF-8"'})
+
 
 # Check if we should auto-initialize the database with Eurovision data
 AUTO_INIT_DB = os.getenv('AUTO_INIT_DB', '0') == '1'
@@ -101,7 +124,7 @@ with app.app_context():
             
             print(f"✅ Migration complete: Created {len(existing_associations)} StageCountry records with order")
         except Exception as e:
-            print(f"❌ Error during migration: {str(e)}")
+            print("Database migration failed")
     
     # Check if we should initialize with data
     if AUTO_INIT_DB:

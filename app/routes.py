@@ -35,7 +35,7 @@ def configure_routes(app):
                     flash(f"Welcome, {username}! Your account has been created.", "success")
                 except Exception as e:
                     db.session.rollback()
-                    flash(f"Error creating user: {str(e)}", "danger")
+                    flash("Could not create user", "danger")
                     return render_template('index.html', form=form, stages=[])
             
             # Store user info in session
@@ -347,7 +347,7 @@ def configure_routes(app):
             return redirect(url_for('stage', stage_id=stage.id))
             
         except Exception as e:
-            flash(f"Error saving data to database: {str(e)}", "danger")
+            flash("Could not save data", "danger")
             return redirect(url_for('fill_db'))
 
     @app.route('/stage/<int:stage_id>/submit/<int:country_id>', methods=['POST'])
@@ -383,6 +383,9 @@ def configure_routes(app):
                 return jsonify({'success': False, 'message': "Invalid grade value"})
             flash("Invalid grade value", "danger")
             return redirect(url_for('stage', stage_id=stage_id))
+
+        if not StageCountry.query.filter_by(stage_id=stage_id, country_id=country_id).first():
+            return jsonify({'success': False, 'message': 'Country is not in this stage'}), 404
 
         # Always create a new grade with the current timestamp
         # This ensures we have a history of all votes and can get the latest one

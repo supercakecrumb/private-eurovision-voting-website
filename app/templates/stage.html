@@ -54,6 +54,7 @@
                             {% for country in countries %}
                             <tr>
                                 <form id="form-{{ country.id }}" method="POST" action="{{ url_for('submit_grades', stage_id=stage.id, country_id=country.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <td class="text-center order-col">
                                         {% for sc in country.stage_associations %}
                                             {% if sc.stage_id == stage.id %}
@@ -292,7 +293,8 @@
                             method: 'POST',
                             body: new FormData(form),
                             headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRFToken': {{ csrf_token()|tojson }}
                             }
                         })
                         .then(response => response.json())
@@ -339,7 +341,8 @@
                                 method: 'POST',
                                 body: formData,
                                 headers: {
-                                    'X-Requested-With': 'XMLHttpRequest'
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRFToken': {{ csrf_token()|tojson }}
                                 }
                             })
                             .then(response => response.json())

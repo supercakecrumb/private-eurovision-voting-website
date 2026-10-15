@@ -285,3 +285,15 @@ To use the GitHub Actions workflow:
 3. The workflow will automatically build the Docker image, push it to ghcr.io, and create a GitHub release
 
 The workflow file is located at `.github/workflows/docker-build.yml`
+### Administrative access
+
+Database imports, clearing stage entries, and order changes require HTTP Basic
+administrator authentication in addition to the voting session. Set
+`ADMIN_USERNAME` and a random `ADMIN_PASSWORD` of at least 24 characters through
+the deployment secret manager. Serve the app over HTTPS. An unset password
+disables administrative routes. Browser forms and AJAX requests use CSRF tokens.
+For local HTTP development only, set `SESSION_COOKIE_SECURE=false`.
+
+Voting remains a shared nickname-based party activity: nicknames are not verified
+identities, and votes remain visible to other participants. Do not use that guest
+flow as administrative authentication.
